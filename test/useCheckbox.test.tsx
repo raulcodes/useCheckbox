@@ -1,16 +1,70 @@
-import { renderHook } from '@testing-library/react-hooks'
-import useCheckbox from '../src/useCheckbox';
+import { renderHook, act } from '@testing-library/react-hooks';
+import useCheckbox from '../src/useCheckbox/useCheckbox';
+import { testData1, singleDatum } from './testData';
 
-import { testData1 } from './testData';
+type dataID = string | number;
 
-describe('useCheckbox hook', () => {
-  it('is initialized with data', () => {
-    const { result: { current: [list, isSelected, selected,] } } = renderHook(() => 
-      useCheckbox({ id: 'name', data: testData1 }));
+const renderUseCheckbox = (identifier: dataID, data: Array<object>) => {
+  const { result } = renderHook(() => useCheckbox({ identifier, data }));
+  return result;
+};
 
-    expect(list.length).toBe(2);
-    expect(isSelected('example1')).toBeFalsy();
-    expect(isSelected('example2')).toBeFalsy();
-    expect(selected.length).toBe(0);
+const identifier = 'name';
+
+describe('useCheckbox react hook', () => {
+  test('should be initialized successfully', () => {
+    const { current } = renderUseCheckbox(identifier, testData1);
+    const { allData, allCheckedData, selectAllData, setSelectedData } = current;
+
+    expect(allData).toStrictEqual(['example1', 'example2']);
+    expect(allCheckedData).toStrictEqual([]);
+    expect(selectAllData).toBeDefined();
+    expect(setSelectedData).toBeDefined();
+  });
+
+  test('should select all successfully', () => {
+    const result = renderUseCheckbox(identifier, testData1);
+
+    act(() => result.current.selectAllData(true));
+
+    expect(result.current.allCheckedData).toStrictEqual([
+      'example1',
+      'example2',
+    ]);
+
+    act(() => result.current.selectAllData(false));
+
+    expect(result.current.allCheckedData).toStrictEqual([]);
+    expect(result.current.allData).toStrictEqual(['example1', 'example2']);
+  });
+
+  test('should set a datum successfully', () => {
+    const result = renderUseCheckbox(identifier, testData1);
+
+    expect(result.current.allCheckedData).toStrictEqual([]);
+
+    act(() => result.current.setSelectedData('example1', true));
+
+    expect(result.current.allCheckedData).toStrictEqual(['example1']);
+
+    act(() => result.current.setSelectedData('example1', false));
+
+    expect(result.current.allCheckedData).toStrictEqual([]);
+    expect(result.current.allData).toStrictEqual(['example1', 'example2']);
+  });
+
+  test('should reflect changed data successfully', () => {
+    let data = testData1;
+    const result = renderUseCheckbox(identifier, data);
+
+    expect(result.current.allData).toStrictEqual(['example1', 'example2']);
+
+    data = [...testData1, singleDatum];
+
+    expect(result.current.allData).toStrictEqual([
+      'example1',
+      'example2',
+      'exampleSingle',
+    ]);
   });
 });
